@@ -96,8 +96,11 @@ class Transformer:
                 else:
                     self.target_height = float(self.context.request.height)
             else:
-                self.target_height = self.engine.get_proportional_height(
-                    self.context.request.width
+                self.target_height = max(
+                    1,
+                    self.engine.get_proportional_height(
+                        self.context.request.width
+                    ),
                 )
 
     def get_target_dimensions(self):
@@ -284,17 +287,23 @@ class Transformer:
             > self.target_height / source_height
         ):
             crop_width = source_width
-            crop_height = int(
-                round(source_width * self.target_height / target_width, 0)
+            crop_height = max(
+                1,
+                int(
+                    round(source_width * self.target_height / target_width, 0)
+                ),
             )
         else:
-            crop_width = int(
-                round(
-                    math.ceil(
-                        self.target_width * source_height / target_height
-                    ),
-                    0,
-                )
+            crop_width = max(
+                1,
+                int(
+                    round(
+                        math.ceil(
+                            self.target_width * source_height / target_height
+                        ),
+                        0,
+                    )
+                ),
             )
             crop_height = source_height
 
@@ -400,6 +409,10 @@ class Transformer:
             resize_width = round(
                 source_width * self.target_height / source_height + 1e-5
             )
+
+        # never resize to a zero-pixel side; a tiny target can round to 0
+        resize_width = max(1, resize_width)
+        resize_height = max(1, resize_height)
 
         # ensure that filter should work on the real image size
         # and not on the request size which might be smaller than the
