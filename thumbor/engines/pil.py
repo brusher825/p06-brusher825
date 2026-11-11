@@ -276,7 +276,21 @@ class Engine(BaseEngine):
                     if pillow_features.check("libimagequant")
                     else None
                 )
+                source = self.image
                 self.image = self.image.quantize(method=quantize_method)
+
+                # quantize() drops the transparency index. Put it back by
+                # reading the palette index of a fully transparent pixel.
+                if source.mode == "RGBA":
+                    alpha = source.getchannel("A")
+                    transparent_mask = alpha.point(
+                        lambda a: 255 if a == 0 else 0
+                    )
+                    bbox = transparent_mask.getbbox()
+                    if bbox is not None:
+                        self.image.info["transparency"] = self.image.getpixel(
+                            (bbox[0], bbox[1])
+                        )
 
         ext = requested_extension or self.get_default_extension()
 
